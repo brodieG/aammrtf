@@ -256,8 +256,9 @@ If you just want to run a single file you can always use something like (after
 installing the package):
 
 ```
-$ R --vanilla -f tests/test-add.R &> tests/test-add.Rout
-$ git diff --no-index tests/test-add.Rout*
+$ cd tests
+$ R CMD BATCH --vanilla test-add.R
+$ git diff --no-index tests/test-add.Rout*  # assuming a .Rout.save exists
 ```
 
 ### Extra Features
