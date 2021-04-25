@@ -18,6 +18,8 @@
 ##
 ## Replaces the guts of a function using the `trace` mechanism.  This may not
 ## work with functions that are inlined by the byte compiler, e.g. primitives.
+## A work-around is to put these inside a wrapper function in your code,
+## although of course that comes with some overhead.
 ##
 ## @param f function to mock
 ## @inheritParams trace (see `?trace` for other parameters.

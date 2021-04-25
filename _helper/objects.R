@@ -16,17 +16,18 @@
 
 ## Generate Reference Object Accessor Functions
 ##
-## Helper functions to simplify reading and writing reference files.
+## Helper functions to simplify reading and writing reference files.  
 ##
 ## @param name character(1) a name to use as a subfolder under `obj.dir`.
 ## @param obj.dir character(1L) directory to reference objects in.
 ## @return a list of reading ("rds", "txt"), and writing functions, ("rds_save",
 ##   "txt_save").
 ## @examples
-## o <- make_file_funs("myfile")
+## ## Load the functions into env so we can access them directly.
+## list2env(make_file_funs("myfile"), environment())
 ## ## Test against stored RDS
-## # o$rds_save(my_fun(), "my_fun_out")            # previously stored value
-## all.equal(my_fun(), o$rds("my_fun_out"))
+## # rds_save(my_fun(), "my_fun_out")            # previously stored value
+## all.equal(my_fun(), rds("my_fun_out"))
 
 make_file_funs <- function(name, obj.dir=file.path("_helper", "objs")) {
   list(
