@@ -59,13 +59,12 @@ Suppose "add/tests/test-add.R" contains:
 ```{r}
 library(add)
 add(1, 2)
-all.equal(add(pi, 1), 4.141592654)
 all.equal(add(pi, "1"), 4.141592654)
 try(add("pi", 1))
 ```
 
 These test normal usage, but also warning and error cases.  We have installed
-copied over "zz-check.R", but do not have our ".Rout.save" file:
+"zz-check.R", but do not yet have our ".Rout.save" file:
 
 ```
 $ ls add/tests/
@@ -261,6 +260,11 @@ $ R --vanilla -f tests/test-add.R &> tests/test-add.Rout
 $ git diff --no-index tests/test-add.Rout*
 ```
 
+### Extra Features
+
+The `"_helper"` subfolder contains some additional functions that can be sourced
+from within test files.
+
 ## Why? Does It Work In Practice?
 
 I migrated `{diffobj}` to this test framework for three reasons:
@@ -294,30 +298,37 @@ months now, including one maintenance update.  So far I'm very satisfied.
 
 ## Related Software
 
-* [`{unitizer}`](https://github.com/brodieG/unitizer) for a full-featured
-  low-dependency snapshot testing framework.
-* [`{tinytest}`](https://github.com/markvanderloo/tinytest/tree/master/pkg) for
-  a zero dependency (other than the package itself) test framework, extended by
-  [`{ttdo}`](https://github.com/eddelbuettel/ttdo) to add `{diffobj}` diffs.
-* [`{testthat}`](https://testthat.r-lib.org/).
-* [`{runit}`](https://cran.r-project.org/web/packages/RUnit/index.html).
+* [`{unitizer}`][2] for a full-featured low-dependency snapshot testing
+  framework.
+* [`{tinytest}`][3] for a zero dependency (other than the package itself)
+  expectation based test framework, extended by [`{ttdo}`][4] to add
+  [`{diffobj}`][7] diffs.
+* [`{testthat}`][5].
+* [`{RUnit}`][6].
 
-Full disclosure: I wrote `{unitizer}`.  I don't use it for `{diffobj}` because
-it uses `{diffobj}`, and I really don't like circular dependencies /
-bootstrapping.
+Full disclosure: I wrote [`{unitizer}`][2].  I don't use it for [`{diffobj}`][7]
+because it uses [`{diffobj}`][7], and I really don't like circular dependencies
+/ bootstrapping.
+
+If you are looking for an expectation based low-dependency framework
+[`{tinytest}`][3] is likely the way to go.
 
 ## Acknowledgments
 
 * R Core for developing and maintaining such a wonderful language.
 * All open source developers out there that make their work freely available
   for others to use.
-* [Github](https://github.com/), [Travis-CI](https://travis-ci.org/),
-  [Codecov](https://about.codecov.io/), [Vagrant](https://www.vagrantup.com/),
-  [Docker](https://www.docker.com/), [Ubuntu](https://www.ubuntu.com/),
-  [Brew](https://brew.sh/) for providing infrastructure that greatly simplifies
-  open source development.
+* [Github](https://github.com/), [Codecov](https://about.codecov.io/),
+  [Vagrant](https://www.vagrantup.com/), [Docker](https://www.docker.com/),
+  [Ubuntu](https://www.ubuntu.com/), [Brew](https://brew.sh/) for providing
+  infrastructure that greatly simplifies open source development.
 * [Free Software Foundation](https://www.fsf.org/) for developing the GPL
   license and promotion of the free software movement.
 
-
 [1]: https://github.com/brodieG/aammrtf/blob/master/zz-check.R
+[2]: https://github.com/brodieG/unitizer
+[3]: https://github.com/markvanderloo/tinytest/tree/master/pkg
+[4]: https://github.com/eddelbuettel/ttdo
+[5]: https://testthat.r-lib.org/
+[6]: https://cran.r-project.org/web/packages/RUnit/index.html
+[7]: https://github.com/brodieG/diffobj
