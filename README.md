@@ -35,16 +35,6 @@ $ ls add/tests
 test-add.R              test-add.Rout.save      zz-check.R
 ```
 
-We could also generate the ".Rout" files directly in the test folder by setting
-the working directory to the "tests" folder and running:
-
-```{r}
-tools:::.runPackageTests()
-```
-
-Of course this is an unexported function intended to run within the `R CMD
-check` folder, so we are taking some risks for the convenience.
-
 ## Installation
 
 The only requirement is to copy the "zz-check.R" into the "tests" directory of
@@ -215,7 +205,9 @@ Some possible mitigation strategies:
   against stored values or similar rather than letting them go to output.
 * Avoid dates, unseeded random numbers, file paths, etc., in the output.
 
-## Interpreting Output
+## Tips And Tricks
+
+### Interpreting Output
 
 This is a snippet from our failed test run earlier:
 
@@ -239,13 +231,37 @@ One "gotcha" is that the diff is run after the typical R intro banner is removed
 from the output.  So in reality line 5 is really line 20 in the ".Rout" file.
 
 The default R diff does not provide much context, but it is easy enough to get
-more with your favorite diff too, e.g.:
+more with your favorite diff, e.g.:
 
 ```
 $ git diff --no-index add.Rcheck/tests/test-add.Rout*
 ```
 
-### Why? Does It Work In Practice?
+### Without R CMD check
+
+`R CMD check` does a lot of things that we don't need during the development
+cycle prior to CRAN submission.  A shortcut is to set the working directory to
+the "tests" folder and running:
+
+```{r}
+tools:::.runPackageTests()
+```
+
+This will create the ".Rout" files directly in the test folder, along with some
+other artifacts.
+
+Of course this is an unexported function intended to run within the `R CMD
+check` folder, so we are taking some risks for the convenience.
+
+If you just want to run a single file you can always use something like (after
+installing the package):
+
+```
+$ R --vanilla -f tests/test-add.R &> tests/test-add.Rout
+$ git diff --no-index tests/test-add.Rout*
+```
+
+## Why? Does It Work In Practice?
 
 I migrated `{diffobj}` to this test framework for three reasons:
 
@@ -305,58 +321,3 @@ bootstrapping.
 
 
 [1]: https://github.com/brodieG/aammrtf/blob/master/zz-check.R
-
-
-
-
-
-
-
-
-No.  The following will just run the tests and place the ".Rout" files directly
-in the package test folder:
-
-```{r}
-setwd('add/tests')
-tools:::.runPackageTests()
-```
-
-This accesses an unexported function from `{tools}`, so there are no
-guarantees this will keep working in the future.
-
-If you just want to run a single file you can always use something like (after
-installing the package):
-
-```
-$ R --vanilla -f tests/test-add.R &> tests/test-add.Rout
-$ git diff --no-index tests/test-add.Rout*
-```
-That's it.  The entire test "framework" is ~20 lines of code in "zz-check.R" you
-can copy into your package.  Of course this is only possible because R does
-almost all the work for us.
-
-
-
-
-:
-
-Rs own internal testing has the option to fail when output differs from the
-stored match.  This option is not currently available for package tests,
-so we must devise a mechanism to cause tests to fail when output differs.  We do
-this by adding 
-
-## Concept
-
-
-## Implementation
-
-Rs own internal testing has the option to fail when output differs from the
-stored match.  This option is not currently available for package tests,
-so we must devise a mechanism to cause tests to fail when output differs.  We do
-this by adding the "zz-check.R" file in this repository to our tests folder:
-## Usage and Caveats
-
-### Naming Test Files
-
-### Defend Against False Positives
-
