@@ -174,35 +174,32 @@ in warnings, errors, and anything else you would observe from terminal output.
 Doing all of this with `stopifnot` and predicates would be tedious.
 
 In some cases we might prefer traditional predicate tests, e.g. to avoid
-vagaries of precision as we did with:
+vagaries of precision as we might with:
 
 ```
-all.equal(add(pi, "1"), 4.141592654)
+all.equal(add(pi, 1), 4.141592654)
+## [1] TRUE
 ```
 
-Even though this is still technically a snapshot test against:
+This is still technically a snapshot test against `[1] TRUE`, but it behaves
+essentially like a traditional predicate test.  Similarly, large outputs can be
+compared against stored objects, etc.
 
-```
-[1] TRUE
-```
+A few tips to make snapshot tests more effective:
 
-For all intents and purposes it behaves like a traditional predicate test.
-Similarly, large outputs can be compared against stored objects, etc.
+* Produce the minimal output that captures desired behavior.
+* Comment your tests.
+* If output must be large, store objects and use e.g. `all.equal` on values.
+* Make the output reproducible:
+    * `all.equal` or `zapsmall` for precision issues.
+    * ASCII-only output if possible, or test against stored values if not.
+    * Avoid outputting file paths, timings, dates, and any other things that may
+      be inconsistent across systems.
 
-If we are reckless about our tests, e.g. by displaying very high levels of
-precision or other things that are likely to vary across test systems, we might
-trigger false positive failures.  This might be the reason why R Core chose not
-to let output differences fail tests.
+The ".Rout.save" files are just as important as the ".R" files.  Don't overwrite
+old ones without confirming that the changes are desired.
 
-Some possible mitigation strategies:
-
-* Wrap sensitive tests in functions such as `all.equal` that reduce the result
-  to a single TRUE value.
-* Use `zapsmall` or similar to reduce precision issues with numerics.
-* Try to stick to ASCII output in tests if you can.  If you are testing
-  functionality that requires non-ASCII output, test the strings directly
-  against stored values or similar rather than letting them go to output.
-* Avoid dates, unseeded random numbers, file paths, etc., in the output.
+See the "tests" paragraph in [WRE - Package subdirectories][8].
 
 ## Tips And Tricks
 
@@ -261,10 +258,19 @@ $ R CMD BATCH --vanilla test-add.R
 $ git diff --no-index tests/test-add.Rout*  # assuming a .Rout.save exists
 ```
 
+This is not exactly the same as what `R CMD check` does, but in most cases
+should suffice.
+
 ### Extra Features
 
 The `"_helper"` subfolder contains some additional functions that can be sourced
 from within test files.
+
+* "objects.R": to facilate storing reference output as "rds" or "txt" files.
+* "mock.R": for basic mocking functionality.
+
+You can copy the `"_helper"` subfolder into your project and source the files
+therein from the test files that require the functionality.
 
 ## Why? Does It Work In Practice?
 
@@ -333,3 +339,4 @@ If you are looking for an expectation based low-dependency framework
 [5]: https://testthat.r-lib.org/
 [6]: https://cran.r-project.org/web/packages/RUnit/index.html
 [7]: https://github.com/brodieG/diffobj
+[8]: https://cran.r-project.org/doc/manuals/R-exts.html#Package-subdirectories
