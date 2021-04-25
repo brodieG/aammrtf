@@ -18,12 +18,12 @@ turning every test into a `stopifnot` predicate.
 ## Implementation
 
 R automatically records the output of every test file run via `R CMD check` in
-the resulting check folder as ".Rout" files.  These files can be copied back
-into the test folder as ".Rout.save" files.
+the resulting check folder as ".Rout" files.  These files can be [copied
+back](#step-by-step-example) into the test folder as ".Rout.save" files.
 
-Once the reference files are in the tests folder, adding the "zz-check.R" file
-in this repository to the same folder will cause tests to fail if future output
-differs from that recorded in the ".Rout.save" files.
+Once the reference files are in the tests folder, adding the ["zz-check.R"][1]
+file in this repository to the same folder will cause tests to fail if future
+output differs from that recorded in the ".Rout.save" files.
 
 That's it.
 
@@ -45,10 +45,26 @@ tools:::.runPackageTests()
 Of course this is an unexported function intended to run within the `R CMD
 check` folder, so we are taking some risks for the convenience.
 
-## Details
+## Installation
 
-Imagine a package `{add}` that consists of one function to sum two scalar
-numbers.  Some usage examples to test might be:
+The only requirement is to copy the "zz-check.R" into the "tests" directory of
+your package, e.g. for `{add}` we might use:
+
+```
+$ curl https://raw.githubusercontent.com/brodieG/aammrtf/master/zz-check.R >\
+     add/tests/zz-check.R
+```
+
+Internally `R CMD check` will list files to test with `dir`, which orders them
+alphabetically.  It is possible such ordering will be affected by locale
+collation, so you should ensure your test files are named in such a way that the
+"zz-check.R" file always sorts last.  Alternatively, rename "zz-check.R" to
+produce the same affect.  It is likely safest to use ASCII only same-case file
+names.
+
+## Step by Step Example
+
+Suppose "add/tests/test-add.R" contains:
 
 ```{r}
 library(add)
@@ -58,10 +74,18 @@ all.equal(add(pi, "1"), 4.141592654)
 try(add("pi", 1))
 ```
 
-These test normal usage, but also warning and error cases.  If we put the code
-into e.g.  "tests/test-add.R" and then from the terminal:
+These test normal usage, but also warning and error cases.  We have installed
+copied over "zz-check.R", but do not have our ".Rout.save" file:
 
 ```
+$ ls add/tests/
+test-add.R      zz-check.R
+```
+
+The next step is to run `R CMD check`.  From the terminal.
+
+```
+$ cd add
 $ R CMD build .                    # builds add_0.0.1.tar.gz
 $ R CMD check add_0.0.1.tar.gz
 * using R Under development (unstable) (2021-03-31 r80136)
@@ -110,19 +134,14 @@ In add("pi", 1) : `x` is not numeric, will attempt to coerce.
 The trick is to copy back into our package test directory as a ".Rout.save":
 
 ```
-$ cp add/add.Rcheck/tests/test-add.Rout \
-     add/tests/test-add.Rout.save
-$ ls add/tests
-test-add.R               test-add.Rout.save
+$ cp add.Rcheck/tests/test-add.Rout \
+     tests/test-add.Rout.save
+
+$ ls tests
+test-add.R              test-add.Rout.save      zz-check.R
 ```
 
-Then we copy the "zz-check.R" file from this repository into the tests folder:
-
-```
-
-```
-
-After we purposefully break our code and re-build we might get:
+If we introduce a regression in our next version then we might see:
 
 ```
 $ R CMD check add_0.0.2.tar.gz
@@ -130,7 +149,6 @@ $ R CMD check add_0.0.2.tar.gz
 
 <--SNIP-->
 
-* checking tests ...
   Running ‘test-add.R’
   Comparing ‘test-add.Rout’ to ‘test-add.Rout.save’ ...5c5
 < [1] -1
@@ -140,92 +158,6 @@ $ R CMD check add_0.0.2.tar.gz
 < [1] "Mean relative difference: 0.9338844"
 ---
 > [1] TRUE
- OK
-* checking PDF version of manual ... OK
-* DONE
-
-Status: OK
-```
-
-The "Status: OK" is a problem we'll address shortly.  Notwithstanding, We can
-tell the tests failed because the output changed: `1 + 2` has become `-1`
-instead of `3`, etc. See [Line Offsets and Other Diff
-Tools](#line-offsets-and-other-diff-tools) for how to interpret this.
-
-Instead of declaring explicit expectations we simply record prior output and
-make that the expectation.  This will catch changes in values, and also changes
-in warnings, errors, and anything else you would observe from terminal output.
-Doing all of this with `stopifnot` and predicates would be tedious.
-
-Outcomes that are difficult to observe directly the terminal can be processed by
-the tests, as we do with:
-
-```
-all.equal(add(pi, "1"), 4.141592654)
-```
-
-The expected output is `[1] TRUE` and is not subject to vagaries of precision.
-Large outputs can be compared against stored objects, etc.
-
-
-No.  The following will just run the tests and place the ".Rout" files directly
-in the package test folder:
-
-```{r}
-setwd('add/tests')
-tools:::.runPackageTests()
-```
-
-This accesses an unexported function from `{tools}`, so there are no
-guarantees this will keep working in the future.
-
-If you just want to run a single file you can always use something like (after
-installing the package):
-
-```
-$ R --vanilla -f tests/test-add.R &> tests/test-add.Rout
-$ git diff --no-index tests/test-add.Rout*
-```
-
-:
-
-Rs own internal testing has the option to fail when output differs from the
-stored match.  This option is not currently available for package tests,
-so we must devise a mechanism to cause tests to fail when output differs.  We do
-this by adding 
-
-## Concept
-
-
-## Implementation
-
-Rs own internal testing has the option to fail when output differs from the
-stored match.  This option is not currently available for package tests,
-so we must devise a mechanism to cause tests to fail when output differs.  We do
-this by adding the "zz-check.R" file in this repository to our tests folder:
-
-```
-$ ls add/tests
-test-add.R              test-add.Rout.save      zz-check.R
-```
-
-After rebuild we now see:
-
-```
-$ R CMD check add_0.0.3.tar.gz
-* using R Under development (unstable) (2021-03-31 r80136)
-
-<--SNIP-->
-
-* checking tests ...
-  Running ‘test-add.R’
-  Comparing ‘test-add.Rout’ to ‘test-add.Rout.save’ ...6c6
-< [1] -1
----
-> [1] 3
-
-<--SNIP-->
-
   Running ‘zz-check.R’
  ERROR
 Running the tests in ‘tests/zz-check.R’ failed.
@@ -242,20 +174,31 @@ Last 13 lines of output:
 Status: 1 ERROR
 ```
 
-That's it.  The entire test "framework" is ~20 lines of code in "zz-check.R" you
-can copy into your package.  Of course this is only possible because R does
-almost all the work for us.
+The `R CMD check` output shows that `1 + 2` has become `-1` instead of `3`, etc.
+See [Interpreting Output](#interpreting-output) for details.
 
-## Usage and Caveats
+## Snapshot Testing
 
-### Naming Test Files
+Instead of declaring explicit expectations we simply record prior output and
+make that the expectation.  This will catch changes in values, and also changes
+in warnings, errors, and anything else you would observe from terminal output.
+Doing all of this with `stopifnot` and predicates would be tedious.
 
-Internally `R CMD check` will list files to test with `dir`, which orders them
-alphabetically.  It is possible such ordering will be affected by locale
-collation, so you should ensure your test files are named in such a way that the
-"zz-check.R" file always sorts last.  ASCII only lower case is likely safest.
+In some cases we might prefer traditional predicate tests, e.g. to avoid
+vagaries of precision as we did with:
 
-### Defend Against False Positives
+```
+all.equal(add(pi, "1"), 4.141592654)
+```
+
+Even though this is still technically a snapshot test against:
+
+```
+[1] TRUE
+```
+
+For all intents and purposes it behaves like a traditional predicate test.
+Similarly, large outputs can be compared against stored objects, etc.
 
 If we are reckless about our tests, e.g. by displaying very high levels of
 precision or other things that are likely to vary across test systems, we might
@@ -272,7 +215,7 @@ Some possible mitigation strategies:
   against stored values or similar rather than letting them go to output.
 * Avoid dates, unseeded random numbers, file paths, etc., in the output.
 
-### Line Offsets and Other Diff Tools
+## Interpreting Output
 
 This is a snippet from our failed test run earlier:
 
@@ -302,7 +245,6 @@ more with your favorite diff too, e.g.:
 $ git diff --no-index add.Rcheck/tests/test-add.Rout*
 ```
 
-
 ### Why? Does It Work In Practice?
 
 I migrated `{diffobj}` to this test framework for three reasons:
@@ -313,12 +255,12 @@ I migrated `{diffobj}` to this test framework for three reasons:
    dependencies.
 3. To see if it could be done and be useful.
 
-I've always been very picky with run time dependencies, but more recently
-decided that build/test time dependencies are also problematic.  I like test
-on R-devel on underpowered VMs without having to wait forever for packages to
-download and compile, or without dealing with missing system dependencies, or
-figuring out why one of the twenty packages isn't installing, or narrowing down
-what changed to break my code, etc.
+I'm usually picky with run time dependencies, but more recently decided that
+build/test time dependencies are also problematic.  I like test on R-devel on
+underpowered VMs without having to wait forever for packages to download and
+compile, or without dealing with missing system dependencies, or figuring out
+why one of the twenty packages isn't installing, or narrowing down what changed
+to break my code, etc.
 
 Features grow linearly with dependencies, but the agony of stuff not working
 grows exponentially with them.
@@ -360,4 +302,61 @@ bootstrapping.
   open source development.
 * [Free Software Foundation](https://www.fsf.org/) for developing the GPL
   license and promotion of the free software movement.
+
+
+[1]: https://github.com/brodieG/aammrtf/blob/master/zz-check.R
+
+
+
+
+
+
+
+
+No.  The following will just run the tests and place the ".Rout" files directly
+in the package test folder:
+
+```{r}
+setwd('add/tests')
+tools:::.runPackageTests()
+```
+
+This accesses an unexported function from `{tools}`, so there are no
+guarantees this will keep working in the future.
+
+If you just want to run a single file you can always use something like (after
+installing the package):
+
+```
+$ R --vanilla -f tests/test-add.R &> tests/test-add.Rout
+$ git diff --no-index tests/test-add.Rout*
+```
+That's it.  The entire test "framework" is ~20 lines of code in "zz-check.R" you
+can copy into your package.  Of course this is only possible because R does
+almost all the work for us.
+
+
+
+
+:
+
+Rs own internal testing has the option to fail when output differs from the
+stored match.  This option is not currently available for package tests,
+so we must devise a mechanism to cause tests to fail when output differs.  We do
+this by adding 
+
+## Concept
+
+
+## Implementation
+
+Rs own internal testing has the option to fail when output differs from the
+stored match.  This option is not currently available for package tests,
+so we must devise a mechanism to cause tests to fail when output differs.  We do
+this by adding the "zz-check.R" file in this repository to our tests folder:
+## Usage and Caveats
+
+### Naming Test Files
+
+### Defend Against False Positives
 
