@@ -30,25 +30,34 @@
 ## all.equal(my_fun(), rds("my_fun_out"))
 
 make_file_funs <- function(name, obj.dir=file.path("_helper", "objs")) {
+  dir <- file.path(getwd(), obj.dir)
   list(
     rds=
-      function(x)
-        readRDS(file.path(obj.dir, name, sprintf("%s.rds", x))),
+      function(x) {
+        old.dir <- setwd(dir); on.exit(setwd(old.dir))
+        readRDS(file.path(dir, name, sprintf("%s.rds", x)))
+      },
     rds_save=
-      function(x, i)
+      function(x, i) {
+        old.dir <- setwd(dir); on.exit(setwd(old.dir))
         saveRDS(
           x,
           file.path(obj.dir, name, sprintf("%s.rds", i)), version=2
-        ),
+        )
+      },
     txt=
-      function(x)
-        readLines(file.path(obj.dir, name, sprintf("%s.txt", x))),
+      function(x) {
+        old.dir <- setwd(dir); on.exit(setwd(old.dir))
+        readLines(file.path(obj.dir, name, sprintf("%s.txt", x)))
+      },
     txt_save=
-      function(x, i)
+      function(x, i) {
+        old.dir <- setwd(dir); on.exit(setwd(old.dir))
         writeLines(
           x,
           file.path(obj.dir, NAME, sprintf("%s.txt", i))
         )
+      }
   )
 }
 
