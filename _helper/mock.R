@@ -42,4 +42,8 @@ mock <- function(f, tracer, where=f, print=FALSE)  {
         parent.frame()
   ) ) )
 }
-unmock <- function(f) suppressMessages(untrace(f))
+unmock <- function(f, where=f)  {
+  invisible(
+    suppressMessages(
+      eval(bquote(untrace(.(substitute(f)), where=.(where))), parent.frame()) 
+) ) }
