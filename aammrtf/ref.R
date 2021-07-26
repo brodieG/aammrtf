@@ -16,7 +16,9 @@
 
 ## Generate Reference Object Accessor Functions
 ##
-## Helper functions to simplify reading and writing reference files.  
+## Helper functions to simplify reading and writing reference files.  You will
+## need to create the target directory, which by default is "_helper/ref-objs".
+## The expectation is that this will be a subdirectory to "pkg/tests".
 ##
 ## @param name character(1) a name to use as a subfolder under `obj.dir`.
 ## @param obj.dir character(1L) directory to reference objects in.
@@ -29,9 +31,13 @@
 ## # rds_save(my_fun(), "my_fun_out")            # previously stored value
 ## all.equal(my_fun(), rds("my_fun_out"))
 
-make_file_funs <- function(name, obj.dir=file.path("_helper", "objs")) {
+make_ref_obj_funs <- function(
+  name,
+  obj.dir=getOption("aamrtf.ref.objs", file.path("_helper", "ref-objs")),
+  env=parent.frame()
+) {
   dir <- file.path(getwd(), obj.dir)
-  list(
+  res <- list(
     rds=
       function(x) {
         old.dir <- setwd(dir); on.exit(setwd(old.dir))
@@ -59,5 +65,13 @@ make_file_funs <- function(name, obj.dir=file.path("_helper", "objs")) {
         )
       }
   )
+  if(
+    any(
+      c('rds', 'rds_save', 'txt', 'txt_save') %in% ls(env)
+    )
+  ) {
+    warning('target objects already defined, not writing them to `env`')
+  } else list2env(res, env)
+  invisible(res)
 }
 
