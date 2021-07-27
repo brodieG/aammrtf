@@ -261,6 +261,26 @@ $ git diff --no-index tests/test-add.Rout*  # assuming a .Rout.save exists
 This is not exactly the same as what `R CMD check` does, but in most cases
 should suffice.
 
+## Not CRAN
+
+If the `NOT_CRAN` environment variable is set to anything other than an empty
+string `aamrtf` assumes tests are being run off-CRAN.  In such a situation any
+test output files that contain the exact string "not-cran" in their names will
+be compared against corresponding ".Rout.save" files.  Otherwise those
+".Rout.save" files are ignored.
+
+You should also disable tests on CRAN as the "not-cran" in the file name only
+prevents `aamrtf` checking if the output changed without stopping `R CMD check`
+from running them.  You can prevent running on CRAN by starting the "not-cran"
+files with:
+
+```{r}
+if(!nzchar(Sys.getenv('NOT_CRAN'))) q()
+```
+
+We purposefully don't put the test expressions within the if statement so that
+all the expressions remain top level and thus print.
+
 ### Extra Features
 
 The `"_helper"` subfolder contains some additional functions that can be sourced
