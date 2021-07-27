@@ -18,20 +18,18 @@ flist <- function(x, y) paste0(x, paste0("'", basename(y), "'", collapse=", "))
 report <- function(x) {writeLines(character(13)); stop(x, call.=FALSE)}
 
 test.out <- list.files(pattern="\\.Rout$")
-if(any(lengths(lapply(test.out, tools::showNonASCIIfile))))
-  warning(flist("Some test output files contain non-ASCII:\n", test.out))
+non.ascii <- which(lengths(lapply(test.out, tools::showNonASCIIfile)) > 0)
+if(length(non.ascii))
+  warning(flist("Some outputs contain non-ASCII:\n", test.out[non.ascii]))
 
-targets <- list.files(pattern='\\.Rout\\.save', full.names=TRUE)
-current <- file.path(dirname(targets), sub('\\.save$', '', basename(targets)))
-missing <- !file.exists(current)
+tar <- list.files(pattern='\\.Rout\\.save$', full.names=TRUE)
+if(!nzchar(Sys.getenv('NOT_CRAN'))) tar <- tar[!grepl('not-cran', tar)]
+cur <- file.path(dirname(tar), sub('\\.save$', '', basename(tar)))
+awol <- !file.exists(cur)
 
-if(any(missing))
-  report(flist("Test output files are missing (failed?):\n", current[missing]))
+if(any(awol)) report(flist(".Rout files missing (failed?):\n", cur[awol]))
 
-diff.dat <- Map(
-  tools::Rdiff, targets[!missing], current[!missing], useDiff=TRUE, Log=TRUE
-)
+diff.dat <- Map(tools::Rdiff, tar[!awol], cur[!awol], useDiff=TRUE, Log=TRUE)
 diffs <- vapply(diff.dat, '[[', 1, 'status')
-if(any(!!diffs))
-  report(flist("Test output files have differences:\n", current[!!diffs]))
+if(any(!!diffs)) report(flist("Test output differences:\n", cur[!!diffs]))
 
