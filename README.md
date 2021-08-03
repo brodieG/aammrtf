@@ -258,6 +258,13 @@ $ R CMD BATCH --vanilla test-add.R
 $ git diff --no-index tests/test-add.Rout*  # assuming a .Rout.save exists
 ```
 
+These might help:
+
+```
+alias rcb='R CMD BATCH --no-save --no-restore'
+alias gdni='git diff --no-index -R'
+```
+
 This is not exactly the same as what `R CMD check` does, but in most cases
 should suffice.
 
@@ -278,8 +285,22 @@ files with:
 if(!nzchar(Sys.getenv('NOT_CRAN'))) q()
 ```
 
+And add the following to .Rbuildignore:
+
+```{r}
+not-cran.*\.Rout.save$
+```
+
+This way the tarballs don't contain the output save file, but any tests run
+directly in the source directory e.g. during development will.
+
+Or should we just add all "not-cran" to the buildignore?  Need to test what
+happens on github actions.
+
 We purposefully don't put the test expressions within the if statement so that
 all the expressions remain top level and thus print.
+
+
 
 ### Extra Features
 
