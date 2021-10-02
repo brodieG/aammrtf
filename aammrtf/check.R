@@ -4,8 +4,7 @@
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
+# the Free Software Foundation, either version 2 or 3 of the License.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,7 +22,6 @@ if(length(non.ascii))
   warning(flist("Some outputs contain non-ASCII:\n", test.out[non.ascii]))
 
 tar <- list.files(pattern='\\.Rout\\.save$', full.names=TRUE)
-if(!nzchar(Sys.getenv('NOT_CRAN'))) tar <- tar[!grepl('not-cran', tar)]
 cur <- file.path(dirname(tar), sub('\\.save$', '', basename(tar)))
 awol <- !file.exists(cur)
 
@@ -32,4 +30,3 @@ if(any(awol)) report(flist(".Rout files missing (failed?):\n", cur[awol]))
 diff.dat <- Map(tools::Rdiff, tar[!awol], cur[!awol], useDiff=TRUE, Log=TRUE)
 diffs <- vapply(diff.dat, '[[', 1, 'status')
 if(any(!!diffs)) report(flist("Test output differences:\n", cur[!!diffs]))
-
