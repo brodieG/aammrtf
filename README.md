@@ -13,8 +13,9 @@ In addition to running the scripts R captures their output, **and** if a
 reference output was previously saved, presents the differences between them.
 Output differences alone are insufficient to fail tests.  `aammrtf` changes this
 so that output differences cause tests to fail.  This small change transforms
-the built-in R test tools into a surprisingly powerful snapshot test framework
-([caveats](#caveats)).
+the built-in R test tools into a surprisingly powerful snapshot test framework.
+There are [caveats](#caveats) you should familiarize yourself with prior to
+using `aammrtf`.
 
 I [wanted](#really-why) a zero **build**-time dependency snapshot-centric test.
 To achieve this I traded some convenience for minimalism.  At its most basic,
@@ -228,6 +229,11 @@ screen output is a double edged sword.  It saves us a lot of work when writing
 the tests, but we must both visually review the results **and** take care to
 avoid spurious failures.
 
+> A significant but unlikely-to-occur risk is that at some point in the future
+> R changes something fundamental about the display of outputs, such as how
+> vector indices are displayed, etc..  Be wary of output from 3rd party packages
+> that may not be as stable as that of base R.
+
 You'll notice we use `all.equal` around the `pi` test above, this is to avoid
 spurious mismatches caused by small changes in the display of numeric values
 with many decimal digits.  `zapsmall` can help with values that are intended to
@@ -251,10 +257,14 @@ WRE][13], as well as the documentation for `tools::Rdiff` which `R CMD check`
 uses to remove some obvious sources of differences such as environment
 addresses, the R startup banner, etc..
 
-> Notably, R does fail a curated set of its own internal tests if their output
-> does not match the recorded file.  Implicit in this is the concern that
-> package authors will be too careless to avoid spurious failures.  Be sure to
-> prove them wrong if you go down this road.
+> R does fail a curated set of its own internal tests if their output does not
+> match the recorded file.  Implicit in this is the concern that package authors
+> will be too careless to avoid spurious failures.  Be sure to prove them wrong
+> if you go down this road.
+
+It would be better to compare values directly instead of their output to screen,
+but doing so is far more involved (see [`unitizer`][2] for a snapshot framework
+based on object values).
 
 We also rely on `R CMD check` to run tests in lexical order so that
 `"zz-check.R"` runs last.  Internally `R CMD check` uses `base::dir` which is
@@ -335,7 +345,7 @@ tools:::.runPackageTests()
 This will run **all** test files, create corresponding `".Rout"` files, compare
 them to `".Rout.save"`, and produce `".Rout.fail"` files for tests that fail.
 This is an un-exported function intended to run within R's own checking code,
-the so you should only use during development with the understanding it's
+the so you should only use during development with the understanding its
 behavior or even existence could change without announcement in future R
 versions.
 
