@@ -13,8 +13,9 @@ In addition to running the scripts R captures their output, **and** if a
 reference output was previously saved, presents the differences between them.
 Output differences alone are insufficient to fail tests.  `aammrtf` changes this
 so that output differences cause tests to fail.  This small change transforms
-the built-in R test tools into a surprisingly powerful snapshot test framework
-([caveats](#caveats)).
+the built-in R test tools into a surprisingly powerful snapshot test framework.
+There are [caveats](#caveats) you should familiarize yourself with prior to
+using `aammrtf`.
 
 I [wanted](#really-why) a zero **build**-time dependency snapshot-centric test.
 To achieve this I traded some convenience for minimalism.  At its most basic,
@@ -222,11 +223,16 @@ at the prompt.
 
 ## Caveats
 
-R does not document why differences with `".Rout.save"` are not (even
-optionally) errors, but we infer it is to avoid spurious failures.  Indeed
-relying on screen output is a double edged sword.  It saves us a lot of work
-when writing the tests, but we must both visually review the results **and**
-take care to avoid spurious failures.
+R does not document why differences with `".Rout.save"` are not errors for
+packages, but we infer it is to avoid spurious failures.  Indeed relying on
+screen output is a double edged sword.  It saves us a lot of work when writing
+the tests, but we must both visually review the results **and** take care to
+avoid spurious failures.
+
+> A significant but unlikely-to-occur risk is that at some point in the future
+> R changes something fundamental about the display of outputs, such as how
+> vector indices are displayed, etc..  Be wary of output from 3rd party packages
+> that may not be as stable as that of base R.
 
 You'll notice we use `all.equal` around the `pi` test above, this is to avoid
 spurious mismatches caused by small changes in the display of numeric values
@@ -241,26 +247,35 @@ Other things to watch out for include:
   whether the call is displayed depending on whether the corresponding R
   entry-point is byte compiled or not - I believe this to be a bug).
 * Output of characters in locales that do not support them.
-* Output that is inconsistent across session such as timestamps, package
+* Output that could be inconsistent across sessions such as timestamps, package
   versions, etc..
 * Options that affect display that change with locale, interactive status, or
-  other factors (e.g `useFancyQuotes`, `crayon.enabled`).
+  other factors (e.g `useFancyQuotes`, `crayon.enabled`, etc.).
 
 See also the subsection on tests of the ["Writing Portable Packages" section in
-WRE][13].
+WRE][13], as well as the documentation for `tools::Rdiff` which `R CMD check`
+uses to remove some obvious sources of differences such as environment
+addresses, the R startup banner, etc..
 
-`R CMD check` uses `tools::Rdiff`, which will remove some obvious sources of
-differences such as environment addresses, the R startup banner, etc..
+> R does fail a curated set of its own internal tests if their output does not
+> match the recorded file.  Implicit in this is the concern that package authors
+> will be too careless to avoid spurious failures.  Be sure to prove them wrong
+> if you go down this road.
 
-We also rely on `R CMD check` to run tests in lexical order so that "zz-check.R"
-runs last.  Internally `R CMD check` uses `base::dir` which is documented to do
-this, but it is not documented that `R CMD check` uses `dir`.  ASCII-only and
-lower case file names are safest to avoid any locale/collation issues.
+It would be better to compare values directly instead of their output to screen,
+but doing so is far more involved (see [`unitizer`][2] for a snapshot framework
+based on object values).
+
+We also rely on `R CMD check` to run tests in lexical order so that
+`"zz-check.R"` runs last.  Internally `R CMD check` uses `base::dir` which is
+documented to do this, but it is not documented that `R CMD check` uses `dir`.
+ASCII-only and lower case file names are safest to avoid any locale/collation
+issues.
 
 The solution to these issues is to recast "risky" expressions so they will
-produce safe output (e.g. as with `all.equal`), and to preset options/variables
-that could cause issues.  For example, if you work in a non-English locale you
-might use (`R CMD check` does this):
+produce safe output (e.g. as with `all.equal`), and to preset options that could
+cause issues.  For example, if you work in a non-English locale you might use
+(`R CMD check` does this):
 
 ```
 LANGAUGE=en R CMD BATCH ...
@@ -327,10 +342,10 @@ one can also use:
 tools:::.runPackageTests()
 ```
 
-This will run all test files, create corresponding `".Rout"` files, compare
+This will run **all** test files, create corresponding `".Rout"` files, compare
 them to `".Rout.save"`, and produce `".Rout.fail"` files for tests that fail.
 This is an un-exported function intended to run within R's own checking code,
-the so you should only use during development with the understanding it's
+the so you should only use during development with the understanding its
 behavior or even existence could change without announcement in future R
 versions.
 
@@ -351,7 +366,7 @@ This is a snippet from our failed test run earlier:
 The `5c5` tells us that line 5 changed in both files. `< [1] -1` is from
 'test-add.Rout', and `> [1] 3` from 'test-add.Rout.save'.  The `<` and the `>`
 at the beginning of each line indicate whether it is from the left or right file
-from:
+from the header:
 
 ```
   Comparing ‘test-add.Rout’ (<) to ‘test-add.Rout.save’ (>) ...5c5
@@ -360,7 +375,7 @@ from:
 One "gotcha" is that the diff is run after the typical R intro banner is removed
 from the output.  So in reality line 5 is really line 20 in the `".Rout"` file.
 
-So upon seeing one of these context-less errors in e.g. the CRAN `R CMD check`
+Upon seeing one of these context-less errors in e.g. the CRAN `R CMD check`
 output, you should open up the `".Rout.save"` file, navigate to the second
 number in the location indicator (i.e. "5c**5**", so go to line five), skip
 fifteen lines further, at which point you will see the context for the diff.
@@ -368,33 +383,48 @@ Ideally R would provide more context, but at the moment this is not an option.
 
 ## Not CRAN
 
-At the moment I don't have a great solution for tests that should be run locally
-and on CI, but not on CRAN.  A hack is to put such tests in a file containing
-"not-cran" in their names, and for the CRAN-destined tarball use something
-like:
+I don't have a great solution for tests that should be run locally and on CI,
+but not on CRAN.  A hack is to put such tests in a file containing "not-cran" in
+their names, and for the CRAN-destined tarball use something like:
 
 ```
-cp .Rbuildignore{.bak} && \
+cp .Rbuildignore{,.bak} &&            \
   echo "not-cran" >> .Rbuildignore && \
-  R CMD BUILD . && \
+  R CMD BUILD . &&                    \
   mv .Rbuildignore{.bak,}
 ```
 
 This will exclude such files from the tarball altogether, but requires
 remembering to do so for CRAN submission.  The converse might be safer:
-start off with the "not-cran" rule in the `".Rbuildignore"` file, and remove it
-for local tests / CI with e.g.:
+start off with the `"not-cran"` rule in the `".Rbuildignore"` file, and remove
+it for local tests / CI with e.g.:
 
 ```
-cp .Rbuildignore{,.bak} && \
+cp .Rbuildignore{,.bak} &&                             \
   sed /not-cran/d .Rbuildignore.bak > .Rbuildignore && \
-  R CMD BUILD . && \
+  R CMD BUILD . &&                                     \
   mv .Rbuildignore{.bak,}
 ```
 
-But then you'll have to figure out how to get your CI to do the same.  Yes, this
-is horrible, but that's what you get for relying on thirteen lines of code for
-your snapshot testing framework.
+But then you'll have to figure out how to get your CI to do the same, which I
+have not bothered with.  Yes, this is horrible, but that's what you get for
+relying on thirteen lines of code for your snapshot testing framework.
+
+If you're willing to give up snapshots for not-CRAN tests you can revert to
+assertion based testing for them, and skip them by checking for an environment
+variable that is set only locally or on CI.  For example, we could use
+`NOT_CRAN` like `{testthat}` does, and add the following to the top of the
+`"not-cran"` script:
+
+```
+cat test-not-cran.R
+## if(!nzchar(Sys.getenv('NOT_CRAN'))) q()
+## library(add)
+## stopifnot(identical(add(1, 2), 3))
+## ...
+```
+
+For these tests you would omit the `".Rout.save"` files.
 
 ## Extra Features
 
@@ -402,8 +432,8 @@ The `"aammrtf"` folder contains some additional functions that can be sourced
 from within test files.
 
 * ["ref.R"][12]: to facilitate storing reference output as "rds" or "txt" files.
-  This is mostly to help with transitioning assertion based tests that used
-  reference output.  You should rarely need it with new snapshot tests.
+  This is mostly to help transition assertion based tests that used reference
+  output.  You should rarely need it with new snapshot tests.
 * ["mock.R"][11]: for basic mocking functionality.
 * ["init.R"][10]: for common code intended to be included in every test script.
 
@@ -423,13 +453,13 @@ I migrated `{diffobj}` to this test framework for three reasons:
 3. To see if it could be done and be useful.
 
 With `aammrtf` feasibility demonstrated by `{diffobj}`, it was only natural to
-migrate `{unitizer}`, particularly because it was likely the only package that
-relied on a "feature" of `{testthat}` that I had to rescue from deprecation
-twice (and really probably should be deprecated).
+migrate `{unitizer}`, particularly because it was the only package that relied
+on a "feature" of `{testthat}` that I had to rescue from deprecation twice (and
+really probably should be deprecated).
 
 ## What's With The Name?
 
-It's a phone-book-era SEO that gives the `aammrtf` folder a chance to
+It's a phone book era SEO that gives the `aammrtf` folder a chance to
 sort at the top of the file listing.  But mostly it's a bad joke that stuck.
 
 ## Related Software
@@ -460,6 +490,7 @@ If you are looking for an expectation based low-dependency package,
   infrastructure that greatly simplifies open source development.
 * [Free Software Foundation](https://www.fsf.org/) for developing the GPL
   license and promotion of the free software movement.
+
 
 [1]: https://github.com/brodieG/aammrtf/blob/master/zz-check.R
 [2]: https://github.com/brodieG/unitizer
