@@ -109,6 +109,9 @@ curl -L https://github.com/brodieG/aammrtf/archive/refs/heads/master.zip \
   rm aammrtf.zip
 ```
 
+To re-install, simply delete the `aammrtf` folder and re-run the installation
+procedure (but make sure you don't save anything of your own in there).
+
 Then add tests files to the `"tests"` package subdirectory along with matching
 `".Rout.save"` files with the output of running the test files.  Read on for
 more details.

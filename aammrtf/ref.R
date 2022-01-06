@@ -16,7 +16,7 @@
 ## Generate Reference Object Accessor Functions
 ##
 ## Helper functions to simplify reading and writing reference files.  You will
-## need to create the target directory, which by default is "aammrtf/ref-objs".
+## need to create the target directory, which by default is "aammrtf-ref-objs".
 ## The expectation is that this will be a subdirectory to "pkg/tests".
 ##
 ## @param name character(1) a name to use as a subfolder under `obj.dir`.
@@ -32,7 +32,7 @@
 
 make_ref_obj_funs <- function(
   name,
-  obj.dir=getOption("aammrtf.ref.objs", file.path("aammrtf", "ref-objs")),
+  obj.dir=getOption("aammrtf.ref.objs", file.path("aammrtf-ref-objs")),
   env=parent.frame()
 ) {
   dir <- file.path(getwd(), obj.dir)
