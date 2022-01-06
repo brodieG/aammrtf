@@ -95,8 +95,7 @@ subdirectory.  E.g. for the imaginary `{add}` package we might use:
 
 ```
 cd add/test
-curl -L https://raw.githubusercontent.com/brodieG/aammrtf/master/aammrtf/check.R
-> zz-check.R
+curl -L https://raw.githubusercontent.com/brodieG/aammrtf/master/aammrtf/check.R > zz-check.R
 ```
 
 For helper scripts and cleaner error reporting use (still in the tests
