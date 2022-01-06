@@ -4,32 +4,30 @@ Ultra-lightweight snapshot testing for R packages.
 
 ## Background
 
-R provides built-in facilities for testing R packages.  In particular, R scripts
-in the "tests" package subfolder are run as part of `R CMD check`.  Scripts that
-produce errors via e.g. `stop` cause the checks to fail.  Third party testing
-frameworks use this mechanism to launch themselves and run tests.
+R provides built-in facilities for testing R packages.  R scripts in the "tests"
+package subfolder are run as part of `R CMD check`, and any errors therein
+cause the checks to fail.  Third party testing frameworks use this mechanism to
+launch themselves and run tests.
 
-In addition to running the scripts R captures their output, **and** if a
-reference output was previously saved, presents the differences between them.
-Output differences alone are insufficient to fail tests.  `aammrtf` changes this
-so that output differences cause tests to fail.  This small change transforms
-the built-in R test tools into a surprisingly powerful snapshot test framework.
-There are [caveats](#caveats) you should familiarize yourself with prior to
-using `aammrtf`.
+A feature that is less well-known is that R also captures test script output,
+**and** if a reference output was previously saved, presents the differences
+between them.  Output differences alone are insufficient to fail tests.
+`aammrtf` changes this so that output differences cause tests to fail.  This
+small change transmogrifies the built-in R test tools into a powerful snapshot
+test framework.  There are [caveats](#caveats) you should familiarize yourself
+with prior to using `aammrtf`.
 
 I [wanted](#really-why) a zero **build**-time dependency snapshot-centric test.
-To achieve this I traded some convenience for minimalism.  At its most basic,
-`aammrtf` is a thirteen line script.
+To achieve this I traded some convenience for minimalism.  In its most basic
+form, `aammrtf` is a thirteen line script.
 
 ## Snapshot Testing
 
 ### What Is It?
 
-Meaningful testing of user-level functionality usually produces non-trivial
-outputs, and usually many of them.  It is critical that testing of such output
-be easy so that user-level functionality is well tested.  For example, suppose
-we write a function that transposes matrices.  Traditional assertion testing
-might look like:
+Meaningful tests of user-level functionality produce non-trivial outputs.
+Snapshots make it easy to test for regressions in them.  For example, to test a
+function that transposes matrices with traditional assertions we might use:
 
 ```{r}
 input <- matrix(1:6, nrow=2)
@@ -41,7 +39,7 @@ stopifnot(
 ```
 
 That's a lot of typing / copy pasting to write a test.  Instead, in `aammrtf`
-snapshot testing the test will look like:
+snapshot testing the test is:
 
 ```{r}
 input <- matrix(1:6, nrow=2)
@@ -52,54 +50,58 @@ Multiply this difference by the need to test square matrices, empty matrices,
 numeric matrices, other matrix functions, etc., and quickly the simplicity of
 the snapshot test becomes very appealing.
 
-The output of running the test is automatically recorded, and after review, the
-recorded output and the input file together become the snapshot test.
+The output of the test is automatically recorded, and the test along with its
+output together become the snapshot test.  The user is responsible for output
+review to ensure correctness.
+
 My packages have large test suites reaching 100% or near 100% coverage over
-thousands of lines of code.  I've found maintaining and creating the
-snapshot-based ones a delight in contrast to the chore of achieving the same
-with assertion-based ones.
+thousands of lines of code, primarily with snapshot tests.  I've found
+creation and maintenance of snapshots a delight in contrast to doing the same
+with assertions.
 
 Snapshot test maintenance is as simple as running a diff between the recorded
 output and new output.  It is easy to verify correctness of changes, and
 trivial to update the tests with them.
 
 `aammrtf` is my second snapshot-centric test "framework".  I've also written
-[`{unitizer}`][2], a full featured test package that I've been been using for
+[`{unitizer}`][2], a full featured snapshot test package that I've used for
 several years.  However, I needed `aammrtf` for `{unitizer}`'s own tests, and
 also for [`{diffobj}`][7], which `{unitizer}` depends on.
 
 There are [caveats](#caveats) to snapshot-first testing, but since assertion
-tests are a special case of snapshot test (implicitly a snapshot of the
+tests are a special case of snapshot tests (implicitly a snapshot of the
 assertion returning TRUE), we can always fall back to assertion tests for cases
 where snapshots are impractical.
 
 ### Best Practices
 
 Snapshots tests are most effective when the outputs are as small as you can make
-them while still capturing the complexity of the functions being tested.  For
-example the `transpose` example used the smallest non-square matrix with more
+them while still capturing the complexity of the functions being tested.  The
+[`transpose` example](#what-is-it) used the smallest non-square matrix with more
 than one row and column.
 
 One of the dangers of snapshot tests is that it is easy to automatically record
-larger than needed outputs that then become difficult to interpret when they
-change later.  This might lead to situations where future maintainers overwrite
-reference output without fully understanding the changes.
+larger than needed outputs.  These become difficult to interpret when they
+change later, and might cause future maintainers overwrite reference output
+without fully understanding the changes.
 
 Tests for which the result is not completely self-evident should be documented
 with comments, possibly with one general comment for a section of related tests.
 
 ## Installation / Quick Start
 
-For a minimal install, copy the `"check.R"` file into the `"tests"` package
-subdirectory.  E.g. for the imaginary `{add}` package we might use:
+Installation is to copy some files from this repository into the tests folder of
+your package.  First check that you don't have pre-existing "zz-check.R" or
+"aammrtf" files.  Then, for a minimal install, copy "aammrtf/check.R".  E.g. for
+the imaginary `{add}` package we might use:
 
 ```
 cd add/test
 curl -L https://raw.githubusercontent.com/brodieG/aammrtf/master/aammrtf/check.R > zz-check.R
 ```
 
-For helper scripts and cleaner error reporting use (still in the tests
-subdirectory):
+For helper scripts and cleaner error reporting copy the entire "aammrtf"
+directory (still in the tests subdirectory):
 
 ```
 curl -L https://github.com/brodieG/aammrtf/archive/refs/heads/master.zip \
@@ -109,15 +111,15 @@ curl -L https://github.com/brodieG/aammrtf/archive/refs/heads/master.zip \
   rm aammrtf.zip
 ```
 
-To re-install, simply delete the `aammrtf` folder and re-run the installation
-procedure (but make sure you don't save anything of your own in there).
-
-Then add tests files to the `"tests"` package subdirectory along with matching
-`".Rout.save"` files with the output of running the test files.  Read on for
-more details.
+Once installed, add tests files to the `"tests"` package subdirectory along with
+matching `".Rout.save"` files with the output of running the test files.  Read
+on for more details.
 
 > `aammrtf` will never be a CRAN package.  It is small enough to embed in
 > packages.
+
+To re-install, delete previously installed files and repeat the installation
+step.
 
 ## Basic Usage
 
@@ -237,10 +239,10 @@ screen output is a double edged sword.  It saves us a lot of work when writing
 the tests, but we must both visually review the results **and** take care to
 avoid spurious failures.
 
-> A significant but unlikely-to-occur risk is that at some point in the future
-> R changes something fundamental about the display of outputs, such as how
-> vector indices are displayed, etc..  Be wary of output from 3rd party packages
-> that may not be as stable as that of base R.
+> A significant but unlikely-to-occur risk is that R irreversibly changes a
+> fundamental aspect of display of outputs, such as how vector indices are
+> displayed, etc..  Be wary of output from 3rd party packages that may not be as
+> stable as that of base R.
 
 You'll notice we use `all.equal` around the `pi` test above, this is to avoid
 spurious mismatches caused by small changes in the display of numeric values
@@ -300,8 +302,9 @@ cat test-add.R
 ## add(1, 2)
 ```
 
-The default [`"init.R"` file][10] sets a few options, but can be modified to do
-more.
+The default [`"init.R"` file][10] sets a few options.  If you wish to add more
+copy the file to a different location (so that it survives a re-install of
+`aammrtf`), modify it, and source that one.
 
 Finally, recall `aammrtf` is a thirteen line script.  Many features you may be
 used to from other testing frameworks are missing, but they are secondary
@@ -315,8 +318,8 @@ back to R 3.3.3 (March 2017).  Over the different R versions I only found one
 false positive issue due to output changing spuriously.  There were many more
 false positives due to other changes (e.g. random seed changes with R 3.5,
 `stringAsFactors`, changes to `{testthat}` or its dependencies, etc.), so
-provided we take care to avoid the obvious sources of spurious errors I would
-expect them to be rare.
+provided we take care to avoid the obvious sources of spurious errors I expect
+them to be rare.
 
 ## Without R CMD check
 
@@ -392,26 +395,10 @@ Ideally R would provide more context, but at the moment this is not an option.
 ## Not CRAN
 
 I don't have a great solution for tests that should be run locally and on CI,
-but not on CRAN.  A hack is to put such tests in a file containing "not-cran" in
-their names, add `"not-cran"` rule in the `".Rbuildignore"` file, and then
-remove it for local tests / CI with e.g.:
-
-```
-cp .Rbuildignore{,.bak} &&                             \
-  sed /not-cran/d .Rbuildignore.bak > .Rbuildignore && \
-  R CMD BUILD . &&                                     \
-  mv .Rbuildignore{.bak,}
-```
-
-But then you'll have to figure out how to get your CI to do the same, which I
-have not bothered with.  Yes, this is horrible, but that's what you get for
-relying on thirteen lines of code for your snapshot testing framework.
-
-If you're willing to give up snapshots for not-CRAN tests you can revert to
-assertion based testing for them, and skip them by checking for an environment
-variable that is set only locally or on CI.  For example, we could use
-`NOT_CRAN` like `{testthat}` does, and add the following to the top of the
-`"not-cran"` script:
+but not on CRAN.  The simplest approach is to forego snapshots, instead relying
+on assertions e.g. with `stopifnot()` or similar to throw errors if tests fail.
+Those tests can then be conditional on a `NOT_CRAN` environment variable as is
+common with `{testthat}` does:
 
 ```
 cat test-not-cran.R
@@ -421,8 +408,23 @@ cat test-not-cran.R
 ## ...
 ```
 
-For these tests you must omit the `".Rout.save"` files or else CRAN might
-complain (even though in theory they should not).
+If you must absolutely have snapshots for these tests, an alternative is
+is to put such tests in a file containing "not-cran" in its name, add
+`"not-cran"` rule in the `".Rbuildignore"` file, and then remove it for local
+tests / CI with e.g.:
+
+```
+cp .Rbuildignore{,.bak} &&                             \
+  sed /not-cran/d .Rbuildignore.bak > .Rbuildignore && \
+  R CMD BUILD . &&                                     \
+  mv .Rbuildignore{.bak,}
+```
+
+This will cause tarballs built normally to exclude the "not-cran" files, but
+will keep them if the build is carried as above.  As this requires remembering
+to do the special build for local tests, and adds the risk of accidentally
+submitting the wrong tarball to CRAN, it is probably best to implement this
+pattern in a non-local CI.
 
 ## Extra Features
 
@@ -458,7 +460,8 @@ really probably should be deprecated).
 ## What's With The Name?
 
 It's a phone book era SEO that gives the `aammrtf` folder a chance to
-sort at the top of the file listing.  But mostly it's a bad joke that stuck.
+sort at the top of the file listing.  But mostly it's a bad joke that stuck.  It
+might change in the future.
 
 ## Related Software
 
