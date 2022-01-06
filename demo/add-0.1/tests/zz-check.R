@@ -1,4 +1,4 @@
-# Copyright (C) 2021 Brodie Gaslam
+# Copyright (C) 2022 Brodie Gaslam
 
 # This file is part of "aammrtf - An Almost Most Minimal R Test Framework"
 #
