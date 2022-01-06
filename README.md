@@ -95,21 +95,27 @@ subdirectory.  E.g. for the imaginary `{add}` package we might use:
 
 ```
 cd add/test
-curl https://raw.githubusercontent.com/brodieG/aammrtf/master/aammrtf/check.R > zz-check.R
+curl -L https://raw.githubusercontent.com/brodieG/aammrtf/master/aammrtf/check.R
+> zz-check.R
 ```
 
-For helper scripts and cleaner error reporting use:
+For helper scripts and cleaner error reporting use (still in the tests
+subdirectory):
 
 ```
-curl https://raw.githubusercontent.com/brodieG/aammrtf/master/aammrtf > aamrtf
-mv aamrtf/check-0.R zz-check.R
+curl -L https://github.com/brodieG/aammrtf/archive/refs/heads/master.zip \
+  -o aammrtf.zip &&                                                      \
+  unzip -j aammrtf.zip 'aammrtf-master/aammrtf/*' -d aammrtf &&          \
+  mv aammrtf/check-0.R zz-check.R &&                                     \
+  rm aammrtf.zip
 ```
 
 Then add tests files to the `"tests"` package subdirectory along with matching
 `".Rout.save"` files with the output of running the test files.  Read on for
 more details.
 
-> `aammrtf` will never be on CRAN.  It is small enough to embed in packages.
+> `aammrtf` will never be a CRAN package.  It is small enough to embed in
+> packages.
 
 ## Basic Usage
 
