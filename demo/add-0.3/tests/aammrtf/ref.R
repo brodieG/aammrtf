@@ -33,7 +33,7 @@
 
 make_ref_obj_funs <- function(
   name,
-  obj.dir=getOption("aamrtf.ref.objs", file.path("aammrtf", "ref-objs")),
+  obj.dir=getOption("aammrtf.ref.objs", file.path("aammrtf", "ref-objs")),
   env=parent.frame()
 ) {
   dir <- file.path(getwd(), obj.dir)
