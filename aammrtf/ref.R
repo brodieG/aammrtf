@@ -36,6 +36,7 @@ make_ref_obj_funs <- function(
   env=parent.frame()
 ) {
   dir <- file.path(getwd(), obj.dir)
+  if(!file_test('-d', '.')) stop("Target is not a directory or does not exist.")
   res <- list(
     rds=
       function(x) {
