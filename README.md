@@ -385,19 +385,8 @@ Ideally R would provide more context, but at the moment this is not an option.
 
 I don't have a great solution for tests that should be run locally and on CI,
 but not on CRAN.  A hack is to put such tests in a file containing "not-cran" in
-their names, and for the CRAN-destined tarball use something like:
-
-```
-cp .Rbuildignore{,.bak} &&            \
-  echo "not-cran" >> .Rbuildignore && \
-  R CMD BUILD . &&                    \
-  mv .Rbuildignore{.bak,}
-```
-
-This will exclude such files from the tarball altogether, but requires
-remembering to do so for CRAN submission.  The converse might be safer:
-start off with the `"not-cran"` rule in the `".Rbuildignore"` file, and remove
-it for local tests / CI with e.g.:
+their names, add `"not-cran"` rule in the `".Rbuildignore"` file, and then
+remove it for local tests / CI with e.g.:
 
 ```
 cp .Rbuildignore{,.bak} &&                             \
@@ -424,7 +413,8 @@ cat test-not-cran.R
 ## ...
 ```
 
-For these tests you would omit the `".Rout.save"` files.
+For these tests you must omit the `".Rout.save"` files or else CRAN might
+complain (even though in theory they should not).
 
 ## Extra Features
 
