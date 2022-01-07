@@ -10,10 +10,10 @@ cause the checks to fail.  Third party testing frameworks use this mechanism to
 launch themselves and run tests.
 
 A more obscure feature is that R captures test outputs, **and** computes
-diffs against user-saved outputs from prior runs.  Differences alone are
-do not fail tests.  `aammrtf` changes this, which effectively adds snapshot test
-capability to the built-in tools.  There are [caveats](#caveats) you should
-familiarize yourself with prior to using `aammrtf`.
+diffs against user-saved outputs from prior runs.  Differences alone do not fail
+tests.  `aammrtf` changes this, which effectively adds snapshot test capability
+to the built-in tools.  There are [caveats](#caveats) you should familiarize
+yourself with prior to using `aammrtf`.
 
 In its most basic form, `aammrtf` is a thirteen line script.
 
@@ -78,7 +78,7 @@ than one row and column.
 
 One of the dangers of snapshot tests is that it is easy to automatically record
 larger than needed outputs.  These become difficult to interpret when they
-change later, and might cause future maintainers overwrite reference output
+change later, and might cause future maintainers to overwrite reference output
 without fully understanding the changes.
 
 Tests for which the result is not completely self-evident should be documented
@@ -88,8 +88,8 @@ with comments, possibly with one general comment for a section of related tests.
 
 Installation is to copy some files from this repository into the tests folder of
 your package.  First check that you don't have pre-existing "zz-check.R" or
-"aammrtf" files.  Then, for a minimal install, copy "aammrtf/check.R".  E.g. for
-the imaginary `{add}` package we might use:
+"aammrtf" files.  Then, for a minimal install, copy "aammrtf/check.R" into the
+package "tests" folder.  E.g. for the imaginary `{add}` package we might use:
 
 ```
 cd add/test
@@ -185,8 +185,8 @@ R CMD check add-0.2.tar.gz
 ## Status: 1 ERROR
 ```
 
-The `R CMD check` output shows that `1 + 2` has become `-1` instead of `3`.  See
-[Interpreting Output](#interpreting-the-diff)  for tips on how to understand
+The `R CMD check` output shows that `add(1, 2)` has become `-1` instead of `3`.
+See [Interpreting Output](#interpreting-the-diff)  for tips on how to understand
 what `R CMD check` is telling us.  In practice it is inconvenient to run `R CMD
 check` during an iterative development cycle, and we'll see later [how to avoid
 it](#without-r-cmd-check).
@@ -394,7 +394,7 @@ I don't have a great solution for tests that should be run locally and on CI,
 but not on CRAN.  The simplest approach is to forego snapshots, instead relying
 on assertions e.g. with `stopifnot()` or similar to throw errors if tests fail.
 Those tests can then be conditional on a `NOT_CRAN` environment variable as is
-common with `{testthat}` does:
+common practice with `{testthat}`:
 
 ```
 cat test-not-cran.R
