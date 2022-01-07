@@ -9,17 +9,13 @@ package subfolder are run as part of `R CMD check`, and any errors therein
 cause the checks to fail.  Third party testing frameworks use this mechanism to
 launch themselves and run tests.
 
-A feature that is less well-known is that R also captures test script output,
-**and** if a reference output was previously saved, presents the differences
-between them.  Output differences alone are insufficient to fail tests.
-`aammrtf` changes this so that output differences cause tests to fail.  This
-small change transmogrifies the built-in R test tools into a powerful snapshot
-test framework.  There are [caveats](#caveats) you should familiarize yourself
-with prior to using `aammrtf`.
+A more obscure feature is that R captures test outputs, **and** computes
+diffs against user-saved outputs from prior runs.  Differences alone are
+do not fail tests.  `aammrtf` changes this, which effectively adds snapshot test
+capability to the built-in tools.  There are [caveats](#caveats) you should
+familiarize yourself with prior to using `aammrtf`.
 
-I [wanted](#really-why) a zero **build**-time dependency snapshot-centric test.
-To achieve this I traded some convenience for minimalism.  In its most basic
-form, `aammrtf` is a thirteen line script.
+In its most basic form, `aammrtf` is a thirteen line script.
 
 ## Snapshot Testing
 
